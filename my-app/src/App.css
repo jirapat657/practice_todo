@@ -1,0 +1,58 @@
+.App {
+  padding: 2rem;
+  font-family: sans-serif;
+  align-items: center;
+}
+
+form {
+  margin-bottom: 1rem;
+}
+
+input {
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+button {
+  padding: 0.4rem 0.7rem;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+.box-wrapper {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.box-column {
+  flex: 1;
+}
+
+.box {
+  background-color: #e0f7fa;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #00acc1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.box.deleted {
+  background-color: #ffcdd2;
+  border: 1px solid #e53935;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-group button {
+  margin-left: 5px;
+}
+
+.crossed {
+  text-decoration: line-through;
+  color: gray;
+}

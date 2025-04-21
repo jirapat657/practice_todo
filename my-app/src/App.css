@@ -17,6 +17,9 @@ button {
   padding: 0.4rem 0.7rem;
   margin-left: 5px;
   cursor: pointer;
+  border: none; /* ลบขอบ */
+  background: none; /* ลบสีbackground */
+
 }
 
 .box-wrapper {
@@ -31,10 +34,10 @@ button {
 
 .box {
   background-color: #e0f7fa;
-  padding: 10px;
+  border: 1px solid #00acc1;
+  padding: 40px;
   border-radius: 8px;
   margin-bottom: 10px;
-  border: 1px solid #00acc1;
   display: flex;
   justify-content: space-between;
   align-items: center;

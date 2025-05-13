@@ -8,8 +8,8 @@ function App() {
   return (
     <Router>
       <nav style={{ padding: '10px' }}>
-        {/* <Link to="/" style={{ marginRight: '10px' }}>หน้าแรก</Link> */}
-        {/* <Link to="/about">หน้าเกี่ยวกับ</Link> */}
+        {/* <Link to="/" style={{ marginRight: '10px' }}>หน้าแรก</Link>
+        <Link to="/about">หน้าเกี่ยวกับ</Link> */}
       </nav>
 
       <Routes>

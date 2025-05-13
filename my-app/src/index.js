@@ -9,7 +9,14 @@ import { ConfigProvider } from 'antd';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>  
-    <ConfigProvider>
+    <ConfigProvider
+    theme={{
+      token: {
+        // colorPrimary: '#ffffff', //สีPrimary ของ element ต่างๆ
+        // colorTextLightSolid: '#ffffff', //สีตัวอักษรบนปุ่ม
+        // colorBorder: '#ffffff', // เปลี่ยนสีขอบ
+      },
+    }}>
       <App />
     </ConfigProvider>
   </React.StrictMode>

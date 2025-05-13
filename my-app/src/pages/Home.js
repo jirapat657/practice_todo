@@ -1,149 +1,228 @@
-import React, { useState } from 'react'; //import useState ใช้เก็บค่าที่กรอก
-import '../App.css'; //ใส่css
-import { RollbackOutlined,
-   FormOutlined, 
-   DeleteOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import React, { useState, useEffect } from 'react';
+import '../App.css';
+import { Input, Button, Card, Typography, Checkbox, Divider, Space, Row, Col, message } from 'antd';
+import { RollbackOutlined, FormOutlined, DeleteOutlined } from '@ant-design/icons';
+import { db } from "../firebase";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  onSnapshot
+} from "firebase/firestore";
+
+const { Title, Text } = Typography;
 
 function Home() {
-    const [text, setText] = useState('');
-    const [boxes, setBoxes] = useState([]); // [{ text: '...', checked: false }]
-    const [deletedBoxes, setDeletedBoxes] = useState([]);
-    const [editingIndex, setEditingIndex] = useState(null);
-    const [editText, setEditText] = useState('');
-    const checkedBoxes = boxes.filter((box) => box.checked);
+  const [text, setText] = useState('');
+  const [boxes, setBoxes] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
 
-    const handleSubmit = (e) => { //ปุ่มAdd Task
-        e.preventDefault();
-        if (text.trim() !== '') {
-        setBoxes([...boxes, { text, checked: false }]);
-        setText('');
-        }
-    };
+  const todosRef = collection(db, "todos");
 
-    const handleCheckboxChange = (index) => { //checkedbox
-        const updated = [...boxes];
-        updated[index].checked = !updated[index].checked;
-        setBoxes(updated);
-    };
+  useEffect(() => {
+    const unsubscribe = onSnapshot(todosRef, (snapshot) => {
+      const newTodos = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setBoxes(newTodos);
+    });
 
-    const handleEdit = (index) => { //Edit
-        setEditingIndex(index);
-        setEditText(boxes[index].text);
-    };
+    return () => unsubscribe();
+  }, []);
 
-    const handleSave = () => { //Save
-        const updated = [...boxes];
-        updated[editingIndex].text = editText;
-        setBoxes(updated);
-        setEditingIndex(null);
-        setEditText('');
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (text.trim() !== '') {
+      await addDoc(todosRef, {
+        text,
+        checked: false,
+        deleted: false
+      });
+      setText('');
+      message.success("Task added");
+    }
+  };
 
-    const handleCancelEdit = () => { //Cancel Edit
-        setEditingIndex(null);
-        setEditText('');
-    };
+  const handleCheckboxChange = async (id, currentValue) => {
+    const docRef = doc(db, "todos", id);
+    await updateDoc(docRef, {
+      checked: !currentValue
+    });
+  };
 
-    const handleDelete = (index) => { //Delete
-        const removed = boxes[index];
-        setBoxes(boxes.filter((_, i) => i !== index));
-        setDeletedBoxes([...deletedBoxes, removed]);
-    };
+  const handleEdit = (id, currentText) => {
+    setEditingId(id);
+    setEditText(currentText);
+  };
 
-    const handleRestore = (index) => { //Restore
-        const restored = deletedBoxes[index];
-        setDeletedBoxes(deletedBoxes.filter((_, i) => i !== index));
-        setBoxes([...boxes, restored]);
-    };
+  const handleSave = async () => {
+    const docRef = doc(db, "todos", editingId);
+    await updateDoc(docRef, {
+      text: editText
+    });
+    setEditingId(null);
+    setEditText('');
+    message.success("Task updated");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditText('');
+  };
+
+  const handleDelete = async (id) => {
+    const docRef = doc(db, "todos", id);
+    await updateDoc(docRef, {
+      deleted: true
+    });
+    message.info("Task deleted");
+  };
+
+  const handleRestore = async (id) => {
+    const docRef = doc(db, "todos", id);
+    await updateDoc(docRef, {
+      deleted: false
+    });
+    message.success("Task restored");
+  };
+
+  const checkedBoxes = boxes.filter((box) => box.checked && !box.deleted);
+  const activeBoxes = boxes.filter((box) => !box.deleted);
+  const deletedBoxes = boxes.filter((box) => box.deleted);
+
+  console.log("box",boxes )
+
   return (
-    <div className="App">
-      
-      <form onSubmit={handleSubmit} style={{ textAlign: 'center'}}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="What is the task today?"
-        />
-        <Button onClick={handleSubmit} disabled={text.trim() === ''} style={{ marginLeft: '5px'}}>
-          Add Task
-        </Button>
+    <div style={{ padding: '40px'}}>
+
+      <form onSubmit={handleSubmit}>
+        <Space style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <Input
+            placeholder="What is the task today?"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            style={{ width: 300 }}
+          />
+          <Button color="#EDF2FJ"  htmlType="submit" disabled={text.trim() === ''}>
+            Add Task
+          </Button>
+        </Space>
       </form>
 
-      <div className="box-wrapper">
-        {/*  */}
-        <div className="box-column">
-          
-          </div>
-          {/*  */}
+      {/* แถวของกล่อง */}
+      <Row justify="center" gutter={[24, 24]}>
         {/* กล่องซ้าย */}
-        <div className="box-column">
-          <h2 style={{ marginTop: '20px' }}>
-            {checkedBoxes.length}/{boxes.length} Todos completed
-          </h2>
-          {boxes.map((item, index) => (
-            <div className="box" key={`all-${index}`}>
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => handleCheckboxChange(index)}
-              />
-              {editingIndex === index ? (
-                <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <input
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
+        <Col xs={24} sm={20} md={10} lg={8}>
+          <Title level={4}>{checkedBoxes.length}/{activeBoxes.length} Todos Completed</Title>
+          <Divider />
+          {activeBoxes.map((item) => (
+            <Card
+              key={item.id}
+              size="small"
+              style={{ 
+                marginBottom: 12,
+                minHeight: 100,
+               }}
+            >
+              <div style={{ padding: '16px', height: '100%' }}>
+                <Row align="middle" justify="space-between" style={{ height: '100%' }} >
+                  <Col>
+                    <Space>
+                      <Checkbox
+                        checked={item.checked}
+                        onChange={() => handleCheckboxChange(item.id, item.checked)}
                       />
-                      <div>
-                        <Button 
+                      {editingId === item.id ? (
+                        <Input
+                          size="small"
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          style={{ width: 200 }}
+                        />
+                      ) : (
+                        <span style={{ textDecoration: item.checked ? 'line-through' : 'none' }}>
+                          {item.text}
+                        </span>
+                      )}
+                    </Space>
+                  </Col>
+
+                  <Col>
+                    {editingId === item.id ? (
+                      <Space>
+                        <Button
+                          type="primary"
+                          size="small"
                           onClick={handleSave}
-                          disabled={editText.trim() === boxes[editingIndex].text.trim()}>
-                          Update Task
+                          disabled={editText.trim() === item.text.trim()}
+                        >
+                          Save
                         </Button>
-                        <Button onClick={handleCancelEdit} style={{ marginLeft: '4px' }}>
+                        <Button size="small" onClick={handleCancelEdit}>
                           Cancel
                         </Button>
-                      </div>
-                    </div>
-                </>
-              ) : (
-                <>
-                  <span className={item.checked ? 'crossed' : ''}>{item.text}</span>
-                  <div className="btn-group">
-                    <button onClick={() => handleEdit(index)}><FormOutlined /></button>
-                    <button style={{color:'red'}} onClick={() => handleDelete(index)}><DeleteOutlined /></button>
-                  </div>
-                </>
-              )}
-            </div>
+                      </Space>
+                    ) : (
+                      <Space>
+                        <FormOutlined
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEdit(item.id, item.text)}
+                        />
+                        <DeleteOutlined
+                          style={{ color: 'red', cursor: 'pointer' }}
+                          onClick={() => handleDelete(item.id)}
+                        />
+                      </Space>
+                    )}
+                  </Col>
+                </Row>
+              </div>
+              
+            </Card>
           ))}
-        </div>
+
+        </Col>
 
         {/* กล่องขวา */}
-        <div className="box-column">
-        <h2 style={{ marginTop: '20px' }}>
-          {deletedBoxes.length} Deleted
-        </h2>
-          {deletedBoxes.map((item, index) => (
-            <div className="box deleted" key={index}>
-              <input type="checkbox" checked={item.checked} readOnly />
-              <span className={item.checked ? 'crossed' : ''}>
-                {item.text}
-              </span>
-              <button onClick={() => handleRestore(index)}><RollbackOutlined /></button>
-            </div>
+        <Col xs={24} sm={20} md={10} lg={8}>
+          <Title level={4}>{deletedBoxes.length} Deleted Tasks</Title>
+          <Divider />
+          {deletedBoxes.map((item) => (
+            <Card
+              key={item.id}
+              size="small"
+              style={{ 
+                marginBottom: 12,
+                minHeight: 100               
+               }}
+            >
+              <div style={{ padding: '16px', height: '100%' }}>
+                <Row align="middle" justify="space-between">
+                  <Col>
+                    <Space>
+                      <Checkbox checked={item.checked} disabled />
+                      <span style={{ textDecoration: item.checked ? 'line-through' : 'none' }}>
+                        {item.text}
+                      </span>
+                    </Space>
+                  </Col>
+                  <Col>
+                    <RollbackOutlined
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleRestore(item.id)}
+                    />
+                  </Col>
+                </Row>
+              </div>
+            </Card>
           ))}
-        </div>
-        {/*  */}
-        <div className="box-column">
-         
-          </div>
-          {/*  */}
 
-      </div>
+        </Col>
+      </Row>
     </div>
-    
   );
 }
 
